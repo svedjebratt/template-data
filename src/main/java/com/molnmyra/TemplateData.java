@@ -160,4 +160,13 @@ public class TemplateData {
 		}
 		return result;
 	}
+
+	public static <T> T fill(Object data, T destination, Object... params) {
+		return fill(data, null, destination, params);
+	}
+
+	public static <T> T fill(Object data, String template, T destination, Object... params) {
+		populate(data, template, destination, params);
+		return destination;
+	}
 }
