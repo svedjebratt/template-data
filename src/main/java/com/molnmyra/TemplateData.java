@@ -81,7 +81,9 @@ public class TemplateData {
 							}
 							field.set(dest, method.invoke(data, invokeParams));
 							return;
-						} catch (IllegalAccessException | InvocationTargetException e) {
+						} catch (IllegalAccessException e) {
+							log.warn("Could not invoke method " + method.getName(), e);
+						} catch (InvocationTargetException e) {
 							log.warn("Could not invoke method " + method.getName(), e);
 						}
 					}
@@ -94,7 +96,9 @@ public class TemplateData {
 						}
 						field.set(dest, method.invoke(data));
 						return;
-					} catch (IllegalAccessException | InvocationTargetException e) {
+					} catch (IllegalAccessException e) {
+						log.warn("Could not invoke method " + method.getName(), e);
+					} catch (InvocationTargetException e) {
 						log.warn("Could not invoke method " + method.getName(), e);
 					}
 				}
@@ -125,7 +129,9 @@ public class TemplateData {
 				populate(dataField.get(data), template, instance, params);
 				//log.debug("Setting field with another TemplateData");
 				field.set(dest, instance);
-			} catch (InstantiationException | IllegalAccessException e) {
+			} catch (InstantiationException e) {
+				throw new RuntimeException(e);
+			} catch (IllegalAccessException e) {
 				throw new RuntimeException(e);
 			} catch (NoSuchFieldException e) {
 				// No field available with the name same as the TemplateData object.
@@ -144,7 +150,9 @@ public class TemplateData {
 			T templateData = templateDataType.newInstance();
 			populate(data, template, templateData, params);
 			return templateData;
-		} catch (InstantiationException | IllegalAccessException e) {
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
 			throw new RuntimeException(e);
 		}
 	}
