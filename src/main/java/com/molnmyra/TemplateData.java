@@ -43,7 +43,7 @@ public class TemplateData {
 			}
 		} else if (template == null) {
 			for (Field field : dest.getClass().getDeclaredFields()) {
-				addField(field, data, template, dest, params);
+				addField(field, data, null, dest, params);
 			}
 		}
 	}
@@ -51,9 +51,15 @@ public class TemplateData {
 	private static void addField(Field field, Object data, String template, Object dest, Object[] params) {
 		//log.debug("Adding field " + field.getName());
 
+		String propertyName = field.getName();
+		Property property = field.getAnnotation(Property.class);
+		if (property != null && property.value().length() > 0) {
+			propertyName = property.value();
+		}
+
 		// Try to add by using methods
 		for (Method method : data.getClass().getDeclaredMethods()) {
-			if ((method.getName().equals(field.getName()) || method.getName().equals("_" + field.getName()))
+			if ((method.getName().equals(propertyName) || method.getName().equals("_" + propertyName))
 					&& method.getReturnType().equals(field.getType())) {
 
 				Object[] invokeParameters = null;
@@ -73,7 +79,7 @@ public class TemplateData {
 
 		// Try to add using methods on data object
 		for (Method method : dest.getClass().getDeclaredMethods()) {
-			if ((method.getName().equals(field.getName()) || method.getName().equals("_" + field.getName()))
+			if ((method.getName().equals(propertyName) || method.getName().equals("_" + propertyName))
 					&& method.getReturnType().equals(field.getType())
 					&& method.getParameterTypes().length > 0
 					&& method.getParameterTypes()[0].isAssignableFrom(data.getClass())) { // First parameter must be of type data
@@ -95,7 +101,7 @@ public class TemplateData {
 
 		// Try to add directly if not added before
 		try {
-			Field dataField = data.getClass().getDeclaredField(field.getName());
+			Field dataField = data.getClass().getDeclaredField(propertyName);
 			Class<?> fieldType = field.getType().isPrimitive() ? Primitives.wrap(field.getType()) : field.getType();
 			Class<?> dataFieldType = dataField.getType().isPrimitive() ? Primitives.wrap(dataField.getType()) : dataField.getType();
 			if (fieldType.equals(dataFieldType)) {
@@ -106,14 +112,14 @@ public class TemplateData {
 		} catch (NoSuchFieldException e) {
 			// No such field, nothing more to do
 		} catch (IllegalAccessException e) {
-			log.warn("Could not read field " + field.getName() + ". " + e.getMessage());
+			log.warn("Could not read field " + propertyName + ". " + e.getMessage());
 		}
 
 		// Check if the type is another TemplateEntity
 		if (field.getType().getAnnotation(TemplateEntity.class) != null) {
 			try {
 				Object instance = field.getType().newInstance();
-				Field dataField = data.getClass().getDeclaredField(field.getName());
+				Field dataField = data.getClass().getDeclaredField(propertyName);
 				populate(dataField.get(data), template, instance, params);
 				//log.debug("Setting field with another TemplateData");
 				field.set(dest, instance);

@@ -61,6 +61,16 @@ public class TemplateDataTest {
 		assertEquals("Vilja", data5.fdata.vilja);
 	}
 
+	@Test
+	public void testPropertyNameChange() {
+		Data7 data7 = TemplateData.create(source, Data7.class);
+		assertEquals("Bulle", data7.notF1);
+		assertEquals("Bulle", data7.otherF1);
+		assertEquals("Vilja", data7.data8.notVilja);
+	}
+
+	// -------------------- Destination objects ------------------------
+
 	@TemplateEntity(@Template(name = "template1", fields = {"f1", "f2"}))
 	public static class Data1 {
 		public String f1;
@@ -108,6 +118,33 @@ public class TemplateDataTest {
 			return s.hungra < 2;
 		}
 	}
+
+	@TemplateEntity
+	public static class Data7 {
+		@Property("f1")
+		public String notF1;
+
+		@Property("myOwnF1")
+		public String otherF1;
+
+		public String _myOwnF1(Source s) {
+			return s.f1;
+		}
+
+		@Property("f1")
+		public Integer intF1;
+
+		@Property("fdata")
+		public Data8 data8;
+	}
+
+	@TemplateEntity
+	public static class Data8 {
+		@Property("vilja")
+		public String notVilja;
+	}
+
+	// -------- Sources ---------
 
 	public static class Source {
 		public String f1 = "Bulle";
