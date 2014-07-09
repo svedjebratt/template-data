@@ -21,6 +21,7 @@ public class TemplateData {
 	}
 
 	private static void populate(Object data, String template, Object dest, Object[] params) {
+		log.debug("populating {} for template {}", dest.getClass().getName(), template);
 		String[] fields = null;
 		TemplateEntity closures = dest.getClass().getAnnotation(TemplateEntity.class);
 		if (closures != null) {
@@ -49,13 +50,13 @@ public class TemplateData {
 	}
 
 	private static void addField(Field field, Object data, String template, Object dest, Object[] params) {
-		//log.debug("Adding field " + field.getName());
-
 		String propertyName = field.getName();
 		Property property = field.getAnnotation(Property.class);
 		if (property != null && property.value().length() > 0) {
 			propertyName = property.value();
 		}
+
+		log.debug("Adding field {}", propertyName);
 
 		// Try to add by using methods
 		for (Method method : data.getClass().getDeclaredMethods()) {
@@ -72,6 +73,7 @@ public class TemplateData {
 					}
 				}
 
+				log.debug("Found method on source, {}", method.getName());
 				setFieldValue(dest, field, data, method, invokeParameters);
 				return;
 			}
@@ -94,6 +96,7 @@ public class TemplateData {
 				}
 				invokeParameters[0] = data;
 
+				log.debug("Found method on destination, {}", method.getName());
 				setFieldValue(dest, field, dest, method, invokeParameters);
 				return;
 			}
@@ -105,7 +108,7 @@ public class TemplateData {
 			Class<?> fieldType = field.getType().isPrimitive() ? Primitives.wrap(field.getType()) : field.getType();
 			Class<?> dataFieldType = dataField.getType().isPrimitive() ? Primitives.wrap(dataField.getType()) : dataField.getType();
 			if (fieldType.equals(dataFieldType)) {
-				//log.debug("Setting field by direct transfer");
+				log.debug("Setting field {} by direct transfer", propertyName);
 				field.set(dest, dataField.get(data));
 				return;
 			}
@@ -121,8 +124,9 @@ public class TemplateData {
 				Object instance = field.getType().newInstance();
 				Field dataField = data.getClass().getDeclaredField(propertyName);
 				populate(dataField.get(data), template, instance, params);
-				//log.debug("Setting field with another TemplateData");
+				log.debug("Setting field {} with another TemplateData", propertyName);
 				field.set(dest, instance);
+				return;
 			} catch (InstantiationException | IllegalAccessException e) {
 				throw new RuntimeException(e);
 			} catch (NoSuchFieldException e) {
@@ -130,7 +134,7 @@ public class TemplateData {
 			}
 		}
 
-		//log.debug("Could not set field");
+		log.debug("Could not set field");
 	}
 
 	private static Object[] getInvokeParameters(Method method, int startIndex, Object[] params) {

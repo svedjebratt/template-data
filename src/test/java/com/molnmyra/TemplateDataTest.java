@@ -69,6 +69,14 @@ public class TemplateDataTest {
 		assertEquals("Vilja", data7.data8.notVilja);
 	}
 
+	@Test
+	public void testPrimitives() {
+		Data9 data9 = TemplateData.create(source, "primitive", Data9.class);
+		assertTrue(data9.fx);
+		assertEquals(Integer.valueOf(123), data9.f2);
+		assertTrue(data9.fdata.sant);
+	}
+
 	// -------------------- Destination objects ------------------------
 
 	@TemplateEntity(@Template(name = "template1", fields = {"f1", "f2"}))
@@ -144,6 +152,24 @@ public class TemplateDataTest {
 		public String notVilja;
 	}
 
+	@TemplateEntity(
+			@Template(name = "primitive", fields = {"fx", "f2", "fdata"})
+	)
+	public static class Data9 {
+		public Boolean fx;
+
+		public Integer f2;
+
+		public Data10 fdata;
+	}
+
+	@TemplateEntity(
+			@Template(name = "primitive", fields = "sant")
+	)
+	public static class Data10 {
+		public Boolean sant;
+	}
+
 	// -------- Sources ---------
 
 	public static class Source {
@@ -166,5 +192,6 @@ public class TemplateDataTest {
 		public String vilja = "Vilja";
 		public int flyta = 332;
 		public Double hungra = 1.23d;
+		public boolean sant = true;
 	}
 }
