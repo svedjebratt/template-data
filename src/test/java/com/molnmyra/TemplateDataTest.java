@@ -2,6 +2,7 @@ package com.molnmyra;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 /**
@@ -50,6 +51,16 @@ public class TemplateDataTest {
 		assertEquals("param f1", data2.f3);
 	}
 
+	@Test
+	public void testMethodsOnDestination() {
+		Data5 data5 = TemplateData.create(source, Data5.class);
+		assertEquals("lapin", data5.latjo);
+		assertNull(data5.lajban);
+		assertEquals(Integer.valueOf(666), data5.ynnest);
+		assertTrue("source2.hungra is less than 2", data5.fdata.ondsam);
+		assertEquals("Vilja", data5.fdata.vilja);
+	}
+
 	@TemplateEntity(@Template(name = "template1", fields = {"f1", "f2"}))
 	public static class Data1 {
 		public String f1;
@@ -72,11 +83,38 @@ public class TemplateDataTest {
 		public double hungra;
 	}
 
+	@TemplateEntity
+	public static class Data5 {
+		public String latjo;
+		public String lajban;
+		public Integer ynnest;
+		public Data6 fdata;
+
+		public Integer _ynnest(Source s) {
+			return s.f1();
+		}
+	}
+
+	@TemplateEntity
+	public static class Data6 {
+		public Boolean ondsam;
+		public String vilja;
+
+		public static Boolean _ondsam() throws IllegalAccessException {
+			throw new IllegalAccessException("This method is not supposed to be called");
+		}
+
+		public static Boolean _ondsam(Source2 s) {
+			return s.hungra < 2;
+		}
+	}
+
 	public static class Source {
 		public String f1 = "Bulle";
 		public int f2 = 123;
 		public boolean fx = true;
 		public Source2 fdata = new Source2();
+		public String latjo = "lapin";
 
 		public Integer f1() {
 			return 666;

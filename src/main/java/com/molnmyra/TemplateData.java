@@ -53,51 +53,43 @@ public class TemplateData {
 
 		// Try to add by using methods
 		for (Method method : data.getClass().getDeclaredMethods()) {
-			if ((method.getName().equals(field.getName()) || method.getName().equals("_" + field.getName())) && method.getReturnType().equals(field.getType())) {
-				if (method.getParameterTypes().length > 0) {
-					Class<?>[] parameterTypes = method.getParameterTypes();
-					Object[] invokeParams = new Object[parameterTypes.length];
-					boolean methodOk = true;
-					outer:
-					for (int i = 0; i < parameterTypes.length; i++) {
-						Class<?> methodParam = parameterTypes[i];
-						for (Object param : params) {
-							if (methodParam.isAssignableFrom(param.getClass())) {
-								invokeParams[i] = param;
-								continue outer;
-							}
-						}
-						if (methodParam.isPrimitive()) {
-							methodOk = false;
-						} else {
-							invokeParams[i] = methodParam.cast(null);
-						}
-					}
+			if ((method.getName().equals(field.getName()) || method.getName().equals("_" + field.getName()))
+					&& method.getReturnType().equals(field.getType())) {
 
-					if (methodOk) {
-						try {
-							if (!method.isAccessible()) {
-								method.setAccessible(true);
-							}
-							field.set(dest, method.invoke(data, invokeParams));
-							return;
-						} catch (IllegalAccessException | InvocationTargetException e) {
-							log.warn("Could not invoke method " + method.getName(), e);
-						}
+				Object[] invokeParameters = null;
+
+				if (method.getParameterTypes().length > 0) {
+					invokeParameters = getInvokeParameters(method, 0, params);
+
+					if (invokeParameters == null) { // Not able to use method
+						continue;
 					}
 				}
-				if (method.getParameterTypes().length == 0) {
-					try {
-						//log.debug("Setting field by method invocation");
-						if (!method.isAccessible()) {
-							method.setAccessible(true);
-						}
-						field.set(dest, method.invoke(data));
-						return;
-					} catch (IllegalAccessException | InvocationTargetException e) {
-						log.warn("Could not invoke method " + method.getName(), e);
+
+				setFieldValue(dest, field, data, method, invokeParameters);
+				return;
+			}
+		}
+
+		// Try to add using methods on data object
+		for (Method method : dest.getClass().getDeclaredMethods()) {
+			if ((method.getName().equals(field.getName()) || method.getName().equals("_" + field.getName()))
+					&& method.getReturnType().equals(field.getType())
+					&& method.getParameterTypes().length > 0
+					&& method.getParameterTypes()[0].isAssignableFrom(data.getClass())) { // First parameter must be of type data
+
+				Object[] invokeParameters = new Object[1];
+				if (method.getParameterTypes().length > 1) {
+					invokeParameters = getInvokeParameters(method, 1, params);
+
+					if (invokeParameters == null) { // Not able to use method
+						continue;
 					}
 				}
+				invokeParameters[0] = data;
+
+				setFieldValue(dest, field, dest, method, invokeParameters);
+				return;
 			}
 		}
 
@@ -135,6 +127,46 @@ public class TemplateData {
 		//log.debug("Could not set field");
 	}
 
+	private static Object[] getInvokeParameters(Method method, int startIndex, Object[] params) {
+		Class<?>[] types = method.getParameterTypes();
+		Object[] result = new Object[types.length];
+
+		outer:
+		for (int i = startIndex; i < types.length; i++) {
+			Class<?> parameterType = types[i];
+			for (Object param : params) {
+				if (parameterType.isAssignableFrom(param.getClass())) {
+					result[i] = param;
+					continue outer;
+				}
+			}
+
+			if (parameterType.isPrimitive()) {
+				return null;
+			} else {
+				result[i] = parameterType.cast(null);
+			}
+		}
+
+		return result;
+	}
+
+	private static void setFieldValue(Object dest, Field field, Object source, Method method, Object[] parameters) {
+		try {
+			//log.debug("Setting field by method invocation");
+			if (!method.isAccessible()) {
+				method.setAccessible(true);
+			}
+			if (parameters != null) {
+				field.set(dest, method.invoke(source, parameters));
+			} else {
+				field.set(dest, method.invoke(source));
+			}
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			log.warn("Could not invoke method " + method.getName(), e);
+		}
+	}
+
 	public static <T> T create(Object data, Class<T> templateDataType, Object... params) {
 		return create(data, null, templateDataType, params);
 	}
@@ -149,18 +181,20 @@ public class TemplateData {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static <T> List<T> createList(List<?> data, Class<T> templateDataType, Object... params) {
 		return createList(data, null, templateDataType, params);
 	}
 
 	public static <T> List<T> createList(List<?> data, String template, Class<T> templateDataType, Object... params) {
-		List<T> result = new ArrayList<T>(data.size());
+		List<T> result = new ArrayList<>(data.size());
 		for (Object obj : data) {
 			result.add(create(obj, template, templateDataType, params));
 		}
 		return result;
 	}
 
+	@SuppressWarnings("unused")
 	public static <T> T fill(Object data, T destination, Object... params) {
 		return fill(data, null, destination, params);
 	}
