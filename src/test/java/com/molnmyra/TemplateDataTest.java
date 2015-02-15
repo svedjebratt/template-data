@@ -3,6 +3,9 @@ package com.molnmyra;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 /**
@@ -75,6 +78,36 @@ public class TemplateDataTest {
 		assertTrue(data9.fx);
 		assertEquals(Integer.valueOf(123), data9.f2);
 		assertTrue(data9.fdata.sant);
+	}
+
+	@Test
+	public void testGenericLists() {
+		Source3 source3 = new Source3();
+		source3.source2sOther = new ArrayList<>();
+		Source2 source2 = new Source2();
+		source3.source2sOther.add(source2);
+		source2 = new Source2();
+		source2.sant = false;
+		source3.source2sOther.add(source2);
+
+		source3.myBooleans = new ArrayList<>();
+		source3.myBooleans.add(true);
+		source3.myBooleans.add(false);
+		source3.myBooleans.add(true);
+		source3.myBooleans.add(false);
+
+		Data11 data11 = TemplateData.create(source3, Data11.class);
+		assertEquals(2, data11.source2s.size());
+		assertTrue(data11.source2s.get(0).sant);
+		assertFalse(data11.source2s.get(1).sant);
+
+		assertNull(data11.myIntegers);
+		assertEquals(4, data11.myBooleans.size());
+		assertTrue(data11.myBooleans.get(0));
+		assertFalse(data11.myBooleans.get(1));
+		assertTrue(data11.myBooleans.get(2));
+		assertFalse(data11.myBooleans.get(3));
+
 	}
 
 	// -------------------- Destination objects ------------------------
@@ -170,6 +203,17 @@ public class TemplateDataTest {
 		public Boolean sant;
 	}
 
+	@TemplateEntity
+	public static class Data11 {
+		@Property("source2sOther")
+		public List<Data10> source2s;
+
+		@Property("myBooleans")
+		public List<Integer> myIntegers;
+
+		public List<Boolean> myBooleans;
+	}
+
 	// -------- Sources ---------
 
 	public static class Source {
@@ -193,5 +237,11 @@ public class TemplateDataTest {
 		public int flyta = 332;
 		public Double hungra = 1.23d;
 		public boolean sant = true;
+	}
+
+	public static class Source3 {
+		public List<Source2> source2sOther;
+
+		public List<Boolean> myBooleans;
 	}
 }

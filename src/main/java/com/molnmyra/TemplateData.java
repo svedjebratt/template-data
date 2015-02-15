@@ -4,9 +4,7 @@ import com.google.common.primitives.Primitives;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,6 +103,23 @@ public class TemplateData {
 		// Try to add directly if not added before
 		try {
 			Field dataField = data.getClass().getDeclaredField(propertyName);
+
+			if (List.class.isAssignableFrom(field.getType()) && List.class.isAssignableFrom(dataField.getType())) {
+				ParameterizedType fieldListType = (ParameterizedType) field.getGenericType();
+				Class<?> fieldListClass = (Class<?>) fieldListType.getActualTypeArguments()[0];
+
+				ParameterizedType dataListType = (ParameterizedType) dataField.getGenericType();
+				Class<?> dataListClass = (Class<?>) dataListType.getActualTypeArguments()[0];
+
+				if (!fieldListClass.equals(dataListClass)) { // Continue to check if dest type is a @TemplateEntity
+					if (fieldListClass.getAnnotation(TemplateEntity.class) != null) {
+						field.set(dest, createList((List<?>) dataField.get(data), template, fieldListClass, params));
+					}
+
+					return;
+				}
+			}
+
 			Class<?> fieldType = field.getType().isPrimitive() ? Primitives.wrap(field.getType()) : field.getType();
 			Class<?> dataFieldType = dataField.getType().isPrimitive() ? Primitives.wrap(dataField.getType()) : dataField.getType();
 			if (fieldType.equals(dataFieldType)) {
